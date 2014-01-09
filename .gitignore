@@ -1,0 +1,7 @@
+*.pyc
+*.out
+*.sqlite
+*.sqlite-journal
+build/
+.idea/
+sureroute.egg-info/
