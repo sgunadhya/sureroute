@@ -5,6 +5,9 @@ import sqlalchemy
 from .models import SureRoute, SureRouteResult, DBSession, Base
 import transaction
 from celery.signals import worker_init
+from celery.task.schedules import crontab
+from celery.task import periodic_task
+
 
 
 @worker_init.connect
@@ -18,10 +21,12 @@ def bootstrap_pyramid(signal, sender):
     DBSession.configure(bind=engine)
     Base.metadata.bind = engine
 
-app = Celery('tasks', broker='redis://localhost:6379/0',)
+app = Celery()
+app.config_from_object('sureroute.celeryconfig')
 
 
-@app.task
+
+@periodic_task(run_every=crontab(minute="*/1"))
 def test_sureroute():
     for sureroute in DBSession.query(SureRoute).all():
         check_object.delay(sureroute)
@@ -39,7 +44,6 @@ def check_object(sureroute):
     with transaction.manager:
         DBSession.add(result)
     DBSession.flush()
-    print(DBSession.query(SureRouteResult).all())
 
 
 @app.task

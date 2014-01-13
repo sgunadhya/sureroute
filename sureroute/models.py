@@ -38,6 +38,15 @@ class SureRouteResult(Base):
     success = Column(Boolean)
     status_code = Column(Text)
 
+class QuickFix(Base):
+    __tablename__ = 'quickfixes'
+    id = Column(Integer, primary_key=True)
+    url = Column(Text)
+    spidering_depth = Column(Integer)
+    spidering_breadth = Column(Integer)
+    email = Column(Text)
+
+
 def trigger_object_path(mapper, connection, target):
     from .tasks import check_object
     check_object.delay(target)

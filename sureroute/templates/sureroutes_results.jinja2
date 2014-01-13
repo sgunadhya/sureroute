@@ -1,0 +1,19 @@
+{% extends 'global_layout.jinja2' %}
+{% block content %}
+        <div class="row span8">
+        <table class="table table-striped table-bordered table-condensed">
+        <thead>
+                <th>Time</th>
+                <th>Result</th>
+                <th>Status Code</th>
+        </thead>
+            {% for result in results %}
+                <tr>
+                <td> {{ result.time }}</td>
+                <td> {{ result.success}}</td>
+                <td> {{ result.status_code }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        </div>
+{% endblock %}

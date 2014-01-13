@@ -10,6 +10,8 @@ from sqlalchemy.exc import DBAPIError
 from .models import (
     DBSession,
     SureRoute,
+    SureRouteResult,
+    QuickFix,
     )
 
 
@@ -43,6 +45,49 @@ class HomeView(Layouts):
 
         return {'hello':'test'}
 
+class QuickFixView(Layouts):
+    def __init__(self, context, request):
+        self.request = request
+        self.context = context
+
+    @view_config(route_name='quickfixes', renderer='templates/quickfixes.jinja2')
+    def list_view(self):
+        quickfixes = DBSession.query(QuickFix).all()
+        return {'quickfixes':quickfixes}
+
+    @view_config(route_name='add_quickfix', renderer='templates/create_sureroute.jinja2')
+    def create_view(self):
+        class QuickFixSchema(colander.Schema):
+            url = colander.SchemaNode(colander.String(),
+                                                validator=colander.url,
+                                                description='URL')
+            spidering_breadth = colander.SchemaNode(colander.Integer(),
+                                           description='Spidering breadth')
+            spidering_depth = colander.SchemaNode(colander.Integer(),
+                                              descripton='Spidering Depth')
+            email = colander.SchemaNode(colander.String(),
+                                        validator=colander.Email(),
+                                        description='Email ID for alerts')
+        schema = QuickFixSchema()
+        form = deform.Form(schema, buttons=('submit', ))
+        if 'submit' in self.request.POST:
+            controls = self.request.POST.items()
+            try:
+                form.validate(controls)
+                post = self.request.POST
+                quickfix = QuickFix(url=post['url'],
+                                      spidering_breadth=post['spidering_breadth'],
+                                      spidering_depth=post['spidering_depth'],
+                                      email=post['email'])
+                DBSession.add(quickfix)
+                DBSession.flush()
+                return HTTPFound(location=self.request.route_url('quickfixes'))
+            except deform.ValidationFailure:
+                return {'form' : form}
+        return {'form': form}
+
+
+
 class SureRouteView(Layouts):
     def __init__(self, context, request):
         self.context = context
@@ -53,10 +98,11 @@ class SureRouteView(Layouts):
         sureroutes = DBSession.query(SureRoute).all()
         return {'sureroutes':sureroutes}
 
-    @view_config(route_name='sureroute_results', renderer='templates/sureroute_results.jinja2')
-    def list_view(self):
-        sureroutes = DBSession.query(SureRoute).all()
-        return {'sureroutes':sureroutes}
+    @view_config(route_name='sureroute_results', renderer='templates/sureroutes_results.jinja2')
+    def result_view(self):
+        id = self.request.matchdict['id']
+        sureroutes = DBSession.query(SureRouteResult).filter(SureRouteResult.sureroute_id == id).all()
+        return {'results':sureroutes}
 
     @view_config(route_name='add_sureroute', renderer='templates/create_sureroute.jinja2')
     def new_view(self):
